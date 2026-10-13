@@ -35,9 +35,15 @@ const hexA = (hex, a) => {
 
 // ── Power-ups ─────────────────────────────────────────────────────────────────
 const POWERUPS = {
-  speed: { duration: 5, color: '#4df', label: 'VELOCIDAD' },
+  speed:  { duration: 5, color: '#4df',     label: 'VELOCIDAD' },
+  shield: { duration: 6, color: '#7dffa0',  label: 'ESCUDO' },
 };
 const POWERUP_DROP_CHANCE = 0.15;
+const POWERUP_TYPES = ['speed', 'shield'];
+
+function pickPowerUpType() {
+  return POWERUP_TYPES[randInt(0, POWERUP_TYPES.length - 1)];
+}
 
 // ── Estrella fugaz ────────────────────────────────────────────────────────────
 const SHOOTING_STAR = {
@@ -87,16 +93,26 @@ class PowerUp {
     ctx.arc(0, 0, this.radius * pulse, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Glifo de rayo
+    // Glifo según el tipo
     ctx.rotate(Math.sin(this.rot) * 0.2);
     ctx.beginPath();
-    ctx.moveTo( 3, -8);
-    ctx.lineTo(-4,  1);
-    ctx.lineTo( 0,  1);
-    ctx.lineTo(-3,  8);
-    ctx.lineTo( 4, -1);
-    ctx.lineTo( 0, -1);
-    ctx.closePath();
+    if (this.type === 'shield') {
+      ctx.moveTo( 0, -8);
+      ctx.lineTo( 6, -4);
+      ctx.lineTo( 6,  2);
+      ctx.lineTo( 0,  8);
+      ctx.lineTo(-6,  2);
+      ctx.lineTo(-6, -4);
+      ctx.closePath();
+    } else {
+      ctx.moveTo( 3, -8);
+      ctx.lineTo(-4,  1);
+      ctx.lineTo( 0,  1);
+      ctx.lineTo(-3,  8);
+      ctx.lineTo( 4, -1);
+      ctx.lineTo( 0, -1);
+      ctx.closePath();
+    }
     ctx.stroke();
 
     ctx.restore();
@@ -392,6 +408,28 @@ class Ship {
     }
 
     ctx.restore();
+
+    // Campo de fuerza del escudo
+    if (this.hasPowerUp('shield')) {
+      const t     = this.powerTimers.shield;
+      const fade  = t < 1.5 ? 0.35 + 0.65 * (t / 1.5) : 1;
+      const pulse = 1 + Math.sin(performance.now() / 130) * 0.06;
+      const r     = (this.radius + 8) * pulse;
+
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.strokeStyle = hexA(POWERUPS.shield.color, 0.9 * fade);
+      ctx.lineWidth   = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = hexA(POWERUPS.shield.color, 0.3 * fade);
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 }
 
@@ -490,6 +528,15 @@ function explode(x, y, count = 8) {
   for (let i = 0; i < count; i++) particles.push(new Particle(x, y));
 }
 
+function destroyAsteroid(a) {
+  a.dead = true;
+  score += a.points ?? POINTS[a.size];
+  explode(a.x, a.y, a.size * 5);
+  if (Math.random() < POWERUP_DROP_CHANCE)
+    powerUps.push(new PowerUp(a.x, a.y, pickPowerUpType()));
+  return a.split();
+}
+
 function killShip() {
   explode(ship.x, ship.y, 14);
   ship.dead = true;
@@ -550,12 +597,7 @@ function update(dt) {
     for (const a of asteroids) {
       if (!a.dead && !b.dead && dist(b, a) < a.radius) {
         b.dead = true;
-        a.dead = true;
-        score += a.points ?? POINTS[a.size];
-        explode(a.x, a.y, a.size * 5);
-        if (Math.random() < POWERUP_DROP_CHANCE)
-          powerUps.push(new PowerUp(a.x, a.y, 'speed'));
-        newAsteroids.push(...a.split());
+        newAsteroids.push(...destroyAsteroid(a));
       }
     }
   }
@@ -564,10 +606,21 @@ function update(dt) {
 
   // Nave vs asteroide
   if (ship.invincible <= 0) {
-    for (const a of asteroids) {
-      if (dist(ship, a) < ship.radius + a.radius * 0.82) {
-        killShip();
-        break;
+    if (ship.hasPowerUp('shield')) {
+      // El escudo destruye lo que toca en vez de recibir daño
+      const shattered = [];
+      for (const a of asteroids) {
+        if (!a.dead && dist(ship, a) < ship.radius + a.radius * 0.82)
+          shattered.push(...destroyAsteroid(a));
+      }
+      if (shattered.length)
+        asteroids = asteroids.filter(a => !a.dead).concat(shattered);
+    } else {
+      for (const a of asteroids) {
+        if (dist(ship, a) < ship.radius + a.radius * 0.82) {
+          killShip();
+          break;
+        }
       }
     }
   }
@@ -611,12 +664,16 @@ function drawHUD() {
   ctx.textAlign = 'left';
   ctx.fillText(`SCORE  ${score}`, 14, 26);
 
-  const speedT = ship.powerTimers.speed || 0;
-  if (speedT > 0) {
-    ctx.fillStyle = POWERUPS.speed.color;
-    ctx.fillText(`${POWERUPS.speed.label}  ${speedT.toFixed(1)}s`, 14, 46);
-    ctx.fillStyle = '#fff';
+  let hudY = 46;
+  for (const type of ['speed', 'shield']) {
+    const t = ship.powerTimers[type] || 0;
+    if (t > 0) {
+      ctx.fillStyle = POWERUPS[type].color;
+      ctx.fillText(`${POWERUPS[type].label}  ${t.toFixed(1)}s`, 14, hudY);
+      hudY += 20;
+    }
   }
+  ctx.fillStyle = '#fff';
 
   ctx.textAlign = 'center';
   ctx.fillText(`NIVEL ${level}`, W / 2, 26);
