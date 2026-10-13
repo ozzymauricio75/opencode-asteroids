@@ -47,5 +47,6 @@ Luego visita `http://localhost:3000`.
 - Partículas de explosión al destruir asteroides
 - Power-up **Velocidad**: al destruir un asteroide puede caer un pickup; al recogerlo la nave mueve con el doble de empuje durante 5 segundos (el HUD muestra la cuenta atrás)
 - Power-up **Escudo**: puede caer al destruir un asteroide; al recogerlo la nave queda rodeada por un campo de fuerza que la protege de todos los impactos (asteroides y estrella fugaz), destruyéndolos, durante 6 segundos (el HUD muestra la cuenta atrás)
+- Power-up **Triple Disparo**: al destruir un asteroide puede caer un pickup; al recogerlo la nave dispara 3 balas en abanico durante 5 segundos (el HUD muestra la cuenta atrás)
 - **Estrella fugaz**: asteroide especial que cruza la pantalla a gran velocidad dejando una cola dorada y chispas. Aparece de forma aleatoria durante la partida y se desvanece solo con el tiempo. Vale 150 puntos, no se divide y destruye la nave al tocarla.
 - **Skins de nave**: pulsa `S` para cambiar la apariencia de la nave: Clásica, Flecha, Halcón (caza angular con cabina cian), Nova (transbordador neón violeta) y Espectro (ala sigilosa con eco menta). La elección se recuerda entre sesiones y también se refleja en los iconos de vidas del HUD.

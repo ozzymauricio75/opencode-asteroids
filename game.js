@@ -39,9 +39,10 @@ const hexA = (hex, a) => {
 const POWERUPS = {
   speed:  { duration: 5, color: '#4df',     label: 'VELOCIDAD' },
   shield: { duration: 6, color: '#7dffa0',  label: 'ESCUDO' },
+  triple: { duration: 5, color: '#ff6b9d',  label: 'TRIPLE DISPARO', spread: 0.18 },
 };
 const POWERUP_DROP_CHANCE = 0.15;
-const POWERUP_TYPES = ['speed', 'shield'];
+const POWERUP_TYPES = ['speed', 'shield', 'triple'];
 
 function pickPowerUpType() {
   return POWERUP_TYPES[randInt(0, POWERUP_TYPES.length - 1)];
@@ -282,6 +283,11 @@ class PowerUp {
       ctx.lineTo(-6,  2);
       ctx.lineTo(-6, -4);
       ctx.closePath();
+    } else if (this.type === 'triple') {
+      for (const a of [-0.5, 0, 0.5]) {
+        ctx.moveTo(0, 7);
+        ctx.lineTo(Math.sin(a) * 11, 7 - Math.cos(a) * 11);
+      }
     } else {
       ctx.moveTo( 3, -8);
       ctx.lineTo(-4,  1);
@@ -551,7 +557,13 @@ class Ship {
     const NOSE = 21;
     const ox = this.x + Math.cos(this.angle) * NOSE;
     const oy = this.y + Math.sin(this.angle) * NOSE;
-    return [new Bullet(ox, oy, this.angle)];
+    if (!this.hasPowerUp('triple')) return [new Bullet(ox, oy, this.angle)];
+    const { spread } = POWERUPS.triple;
+    return [
+      new Bullet(ox, oy, this.angle - spread),
+      new Bullet(ox, oy, this.angle),
+      new Bullet(ox, oy, this.angle + spread),
+    ];
   }
 
   draw() {
@@ -560,7 +572,9 @@ class Ship {
     if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0) return;
 
     const skin  = SKINS[skinIndex];
-    const color = this.hasPowerUp('speed') ? POWERUPS.speed.color : '#fff';
+    const color = this.hasPowerUp('triple') ? POWERUPS.triple.color
+                : this.hasPowerUp('speed')  ? POWERUPS.speed.color
+                : '#fff';
 
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -839,7 +853,7 @@ function drawHUD() {
   ctx.fillText(`SCORE  ${score}`, 14, 26);
 
   let hudY = 46;
-  for (const type of ['speed', 'shield']) {
+  for (const type of POWERUP_TYPES) {
     const t = ship.powerTimers[type] || 0;
     if (t > 0) {
       ctx.fillStyle = POWERUPS[type].color;
@@ -847,6 +861,7 @@ function drawHUD() {
       hudY += 20;
     }
   }
+
   ctx.fillStyle = '#fff';
 
   ctx.textAlign = 'center';
