@@ -44,5 +44,5 @@ Luego visita `http://localhost:3000`.
 - 3 vidas con invencibilidad temporal al reaparecer (parpadeo)
 - Asteroides se parten en fragmentos más pequeños al ser destruidos
 - Partículas de explosión al destruir asteroides
-- Power-up **Velocidad**: al destruir un asteroide puede caer un pickup; al recogerlo la nave mueve con el doble de empuje durante 5 segundos (el HUD muestra la cuenta atrás)
+- Power-up **Triple Disparo**: al destruir un asteroide puede caer un pickup; al recogerlo la nave dispara 3 balas en abanico durante 5 segundos (el HUD muestra la cuenta atrás)
 - **Estrella fugaz**: asteroide especial que cruza la pantalla a gran velocidad dejando una cola dorada y chispas. Aparece de forma aleatoria durante la partida y se desvanece solo con el tiempo. Vale 150 puntos, no se divide y destruye la nave al tocarla.

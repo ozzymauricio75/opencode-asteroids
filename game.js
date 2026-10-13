@@ -35,7 +35,7 @@ const hexA = (hex, a) => {
 
 // ── Power-ups ─────────────────────────────────────────────────────────────────
 const POWERUPS = {
-  speed: { duration: 5, color: '#4df', label: 'VELOCIDAD' },
+  triple: { duration: 5, color: '#ff6b9d', label: 'TRIPLE DISPARO', spread: 0.18 },
 };
 const POWERUP_DROP_CHANCE = 0.15;
 
@@ -50,7 +50,7 @@ const SHOOTING_STAR = {
 };
 
 class PowerUp {
-  constructor(x, y, type = 'speed') {
+  constructor(x, y, type = 'triple') {
     this.x     = x;
     this.y     = y;
     this.type  = type;
@@ -87,16 +87,13 @@ class PowerUp {
     ctx.arc(0, 0, this.radius * pulse, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Glifo de rayo
+    // Glifo de triple disparo (abanico de 3 trazos)
     ctx.rotate(Math.sin(this.rot) * 0.2);
     ctx.beginPath();
-    ctx.moveTo( 3, -8);
-    ctx.lineTo(-4,  1);
-    ctx.lineTo( 0,  1);
-    ctx.lineTo(-3,  8);
-    ctx.lineTo( 4, -1);
-    ctx.lineTo( 0, -1);
-    ctx.closePath();
+    for (const a of [-0.5, 0, 0.5]) {
+      ctx.moveTo(0, 7);
+      ctx.lineTo(Math.sin(a) * 11, 7 - Math.cos(a) * 11);
+    }
     ctx.stroke();
 
     ctx.restore();
@@ -333,7 +330,7 @@ class Ship {
     }
 
     const ROT   = 3.5;   // rad/s
-    const THRUST = 260 * (this.hasPowerUp('speed') ? 2 : 1);  // px/s²
+    const THRUST = 260;  // px/s²
     const DRAG   = 0.987;
 
     if (keys['ArrowLeft'])  this.angle -= ROT * dt;
@@ -357,7 +354,13 @@ class Ship {
     const NOSE = 21;
     const ox = this.x + Math.cos(this.angle) * NOSE;
     const oy = this.y + Math.sin(this.angle) * NOSE;
-    return [new Bullet(ox, oy, this.angle)];
+    if (!this.hasPowerUp('triple')) return [new Bullet(ox, oy, this.angle)];
+    const { spread } = POWERUPS.triple;
+    return [
+      new Bullet(ox, oy, this.angle - spread),
+      new Bullet(ox, oy, this.angle),
+      new Bullet(ox, oy, this.angle + spread),
+    ];
   }
 
   draw() {
@@ -368,7 +371,7 @@ class Ship {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    ctx.strokeStyle = this.hasPowerUp('speed') ? POWERUPS.speed.color : '#fff';
+    ctx.strokeStyle = this.hasPowerUp('triple') ? POWERUPS.triple.color : '#fff';
     ctx.lineWidth   = 1.5;
     ctx.lineJoin    = 'round';
 
@@ -554,7 +557,7 @@ function update(dt) {
         score += a.points ?? POINTS[a.size];
         explode(a.x, a.y, a.size * 5);
         if (Math.random() < POWERUP_DROP_CHANCE)
-          powerUps.push(new PowerUp(a.x, a.y, 'speed'));
+          powerUps.push(new PowerUp(a.x, a.y, 'triple'));
         newAsteroids.push(...a.split());
       }
     }
@@ -611,10 +614,10 @@ function drawHUD() {
   ctx.textAlign = 'left';
   ctx.fillText(`SCORE  ${score}`, 14, 26);
 
-  const speedT = ship.powerTimers.speed || 0;
-  if (speedT > 0) {
-    ctx.fillStyle = POWERUPS.speed.color;
-    ctx.fillText(`${POWERUPS.speed.label}  ${speedT.toFixed(1)}s`, 14, 46);
+  const tripleT = ship.powerTimers.triple || 0;
+  if (tripleT > 0) {
+    ctx.fillStyle = POWERUPS.triple.color;
+    ctx.fillText(`${POWERUPS.triple.label}  ${tripleT.toFixed(1)}s`, 14, 46);
     ctx.fillStyle = '#fff';
   }
 
