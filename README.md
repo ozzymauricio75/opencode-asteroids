@@ -32,11 +32,12 @@ Luego visita `http://localhost:3000`.
 
 ## Puntuación
 
-| Asteroide | Puntos |
-| --------- | ------ |
-| Grande    | 20     |
-| Mediano   | 50     |
-| Pequeño   | 100    |
+| Asteroide       | Puntos |
+| --------------- | ------ |
+| Grande          | 20     |
+| Mediano         | 50     |
+| Pequeño         | 100    |
+| Estrella fugaz  | 150    |
 
 ## Características
 
@@ -44,3 +45,4 @@ Luego visita `http://localhost:3000`.
 - Asteroides se parten en fragmentos más pequeños al ser destruidos
 - Partículas de explosión al destruir asteroides
 - Power-up **Velocidad**: al destruir un asteroide puede caer un pickup; al recogerlo la nave mueve con el doble de empuje durante 5 segundos (el HUD muestra la cuenta atrás)
+- **Estrella fugaz**: asteroide especial que cruza la pantalla a gran velocidad dejando una cola dorada y chispas. Aparece de forma aleatoria durante la partida y se desvanece solo con el tiempo. Vale 150 puntos, no se divide y destruye la nave al tocarla.
