@@ -209,6 +209,25 @@ const SKINS = [
       c.stroke();
     },
   },
+  {
+    name: 'TITAN',
+    flame: [-8, 0],
+    flameColor: 'rgba(180, 100, 255, 0.9)',
+    scale: 2,
+    pointsMultiplier: 2,
+    color: '#b44bff',
+    draw(c, color) {
+      c.strokeStyle = color;
+      c.lineWidth   = 1.5;
+      c.beginPath();
+      c.moveTo( 20,  0);   // nariz
+      c.lineTo(-12, -9);   // ala izquierda
+      c.lineTo( -7,  0);   // muesca trasera
+      c.lineTo(-12,  9);   // ala derecha
+      c.closePath();
+      c.stroke();
+    },
+  },
 ];
 
 let skinIndex = 0;
@@ -508,7 +527,7 @@ class Ship {
     this.angle  = -Math.PI / 2;
     this.vx     = 0;
     this.vy     = 0;
-    this.radius = 12;
+    this.radius = 12 * (SKINS[skinIndex].scale || 1);
     this.thrusting     = false;
     this.invincible    = 3;
     this.shootCooldown = 0;
@@ -532,6 +551,8 @@ class Ship {
       if (this.powerTimers[k] > 0) this.powerTimers[k] -= dt;
     }
 
+    this.radius = 12 * (SKINS[skinIndex].scale || 1);
+
     const ROT   = 3.5;   // rad/s
     const THRUST = 260 * (this.hasPowerUp('speed') ? 2 : 1);  // px/s²
     const DRAG   = 0.987;
@@ -554,7 +575,7 @@ class Ship {
   tryShoot() {
     if (this.shootCooldown > 0 || this.dead) return [];
     this.shootCooldown = 0.2;
-    const NOSE = 21;
+    const NOSE = 21 * (SKINS[skinIndex].scale || 1);
     const ox = this.x + Math.cos(this.angle) * NOSE;
     const oy = this.y + Math.sin(this.angle) * NOSE;
     if (!this.hasPowerUp('triple')) return [new Bullet(ox, oy, this.angle)];
@@ -572,13 +593,15 @@ class Ship {
     if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0) return;
 
     const skin  = SKINS[skinIndex];
+    const baseColor = skin.color || '#fff';
     const color = this.hasPowerUp('triple') ? POWERUPS.triple.color
                 : this.hasPowerUp('speed')  ? POWERUPS.speed.color
-                : '#fff';
+                : baseColor;
 
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
+    if (skin.scale) ctx.scale(skin.scale, skin.scale);
     ctx.lineJoin = 'round';
 
     // Silueta según la skin activa
@@ -719,7 +742,8 @@ function explode(x, y, count = 8) {
 
 function destroyAsteroid(a) {
   a.dead = true;
-  score += a.points ?? POINTS[a.size];
+  const mult = SKINS[skinIndex].pointsMultiplier || 1;
+  score += (a.points ?? POINTS[a.size]) * mult;
   explode(a.x, a.y, a.size * 5);
   if (Math.random() < POWERUP_DROP_CHANCE)
     powerUps.push(new PowerUp(a.x, a.y, pickPowerUpType()));
@@ -839,9 +863,10 @@ function drawLifeIcon(x, y) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(-Math.PI / 2);
-  ctx.scale(0.5, 0.5);
+  const s = SKINS[skinIndex];
+  ctx.scale(0.5 / (s.scale || 1), 0.5 / (s.scale || 1));
   ctx.lineJoin = 'round';
-  SKINS[skinIndex].draw(ctx, '#fff');
+  s.draw(ctx, s.color || '#fff');
   ctx.restore();
 }
 
@@ -869,7 +894,9 @@ function drawHUD() {
 
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = '13px monospace';
-  ctx.fillText(`SKIN ${SKINS[skinIndex].name}`, W / 2, 46);
+  const skinInfo = SKINS[skinIndex];
+  const multLabel = skinInfo.pointsMultiplier > 1 ? `  ×${skinInfo.pointsMultiplier} PTS` : '';
+  ctx.fillText(`SKIN ${skinInfo.name}${multLabel}`, W / 2, 46);
   ctx.fillStyle = '#fff';
   ctx.font = '15px monospace';
 
